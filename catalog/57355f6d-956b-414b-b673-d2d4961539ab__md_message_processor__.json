@@ -1,0 +1,10 @@
+{
+    "inputMessageMetadata": {},
+    "outputMessageMetadata": {
+        "outboundProperties": {
+            "password": {}
+        }
+    },
+    "id": "57355f6d-956b-414b-b673-d2d4961539ab",
+    "version": "5.2.0.0"
+}

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:context="http://www.springframework.org/schema/context" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:secure-property-placeholder="http://www.mulesoft.org/schema/mule/secure-property-placeholder" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/secure-property-placeholder http://www.mulesoft.org/schema/mule/secure-property-placeholder/current/mule-secure-property-placeholder.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd">
+    <secure-property-placeholder:config key="abcd1234" location="keys.properties,mule-app.properties" name="secureprop" doc:name="Secure Property Placeholder" encryptionAlgorithm="DES" systemPropertiesMode="NEVER"/>
+    <context:property-placeholder location="keys.properties"/>
+    <http:listener-config name="HTTP_Listener_Configuration_8081" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    <http:request-config name="HTTP_Request_Configuration" host="localhost" port="8082" doc:name="HTTP Request Configuration"/>
+    <http:listener-config name="HTTP_Listener_Configuration_8082" host="0.0.0.0" port="8082" doc:name="HTTP Listener Configuration"/>
+    
+    <flow name="TestSecureProps">
+        <http:listener config-ref="HTTP_Listener_Configuration_8081" path="/" doc:name="HTTP"/>
+        <http:request config-ref="HTTP_Request_Configuration" path="/authenticate" method="GET" doc:name="Call API">
+            <http:request-builder>
+                <http:header headerName="uname" value="${uname}"/>
+                <http:header headerName="pwd" value="${pwd}"/>
+            </http:request-builder>
+        </http:request>
+    </flow>
+    <flow name="API">
+        <http:listener config-ref="HTTP_Listener_Configuration_8082" path="/authenticate" doc:name="HTTP"/>
+        <set-variable variableName="reqUserName" value="#[message.inboundProperties.'uname']" doc:name="GetUserName From Header"/>
+        <set-variable variableName="reqPassword" value="#[message.inboundProperties.'pwd']" doc:name="GetPassword From Header"/> 
+        <choice doc:name="Validate UnEncrypted Password">
+            <when expression="reqUserName == 'rak' &amp;&amp; reqPassword == 'P@ssw0rd'">
+                <set-payload value="Authorized Successfully with username/pwd - #[flowVars.reqUserName]/#[flowVars.reqPassword]" doc:name="Set Success"/>
+            </when>
+            <otherwise>
+                <set-payload value="Not Authorized with username/pwd - #[flowVars.reqUserName]/#[flowVars.reqPassword]" doc:name="Set Auth Error"/>
+            </otherwise>
+        </choice>
+    </flow>
+</mule>
